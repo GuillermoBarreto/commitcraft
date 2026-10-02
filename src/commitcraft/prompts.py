@@ -24,9 +24,8 @@ Write a conventional commit message for this staged git diff:
 def build_user_prompt(diff: str) -> str:
     """Wrap the staged diff in the user prompt sent to the model.
 
-    The diff is inserted verbatim via ``str.replace`` rather than
-    ``str.format``: staged diffs routinely contain braces (dict literals,
-    f-strings, JSX, Go structs, ...) that ``str.format`` would try to
-    interpret as format fields and crash on with ``KeyError``.
+    The diff is spliced in with ``str.replace`` rather than ``str.format``
+    so braces in the diff (dict literals, f-strings, JSX, ...) can never be
+    misread as template fields, whatever the template looks like.
     """
     return USER_PROMPT_TEMPLATE.replace("{diff}", diff)
