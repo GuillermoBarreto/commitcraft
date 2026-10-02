@@ -36,6 +36,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Commit the staged changes with the suggested message",
     )
     parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the prompt that would be sent, without calling the LLM",
+    )
+    parser.add_argument(
         "--max-diff-chars",
         type=int,
         default=12000,
@@ -55,6 +60,25 @@ def draft_message(
     return backend.generate(SYSTEM_PROMPT, build_user_prompt(diff), model)
 
 
+def show_dry_run(
+    backend_name: str, model: str | None, max_diff_chars: int = 12000
+) -> int:
+    """Print the prompt that would be sent, without calling the LLM."""
+    try:
+        diff = staged_diff(max_chars=max_diff_chars)
+    except GitError as exc:
+        print(f"commitcraft: error: {exc}", file=sys.stderr)
+        return 1
+    model = model or DEFAULT_MODELS[backend_name]
+    print(f"backend: {backend_name}")
+    print(f"model: {model}")
+    print("--- system prompt ---")
+    print(SYSTEM_PROMPT)
+    print("--- user prompt ---")
+    print(build_user_prompt(diff))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
@@ -62,6 +86,8 @@ def main(argv: list[str] | None = None) -> int:
     except GitError as exc:
         print(f"commitcraft: error: {exc}", file=sys.stderr)
         return 1
+    if args.dry_run:
+        return show_dry_run(args.backend, args.model, args.max_diff_chars)
     try:
         message = draft_message(args.backend, args.model, args.max_diff_chars)
     except (GitError, BackendError) as exc:
