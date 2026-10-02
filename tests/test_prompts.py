@@ -22,3 +22,13 @@ def test_build_user_prompt_wraps_diff() -> None:
     prompt = build_user_prompt(diff)
     assert diff in prompt
     assert "commit message" in prompt.lower()
+
+
+def test_build_user_prompt_inserts_diff_verbatim() -> None:
+    # Diffs routinely contain braces (dict literals, f-strings, JSX, Go
+    # structs, ...). Pin the contract that the diff is inserted verbatim,
+    # whatever templating mechanism is used under the hood.
+    diff = 'diff --git a/a.py b/a.py\n+config = {"key": f"{value}"}\n+if ok: print("{done}")'
+    prompt = build_user_prompt(diff)
+    assert diff in prompt
+    assert prompt.count("{diff}") == 0
