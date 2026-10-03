@@ -29,3 +29,39 @@ def build_user_prompt(diff: str) -> str:
     misread as template fields, whatever the template looks like.
     """
     return USER_PROMPT_TEMPLATE.replace("{diff}", diff)
+
+
+def build_retry_user_prompt(diff: str, previous: str) -> str:
+    """User prompt asking for an alternative message different from ``previous``."""
+    return build_user_prompt(diff) + (
+        "\nYour previous suggestion was:\n"
+        f"{previous}\n"
+        "Suggest a DIFFERENT commit message for the same diff."
+    )
+
+
+EMOJI_BY_TYPE = {
+    "feat": "✨",
+    "fix": "🐛",
+    "docs": "📝",
+    "style": "💄",
+    "refactor": "♻️",
+    "perf": "⚡️",
+    "test": "✅",
+    "build": "🏗️",
+    "ci": "👷",
+    "chore": "🔧",
+    "revert": "⏪",
+}
+
+
+def add_emoji(message: str) -> str:
+    """Prefix the conventional-commit type with its emoji (``🐛 fix(scope): ...``).
+
+    Messages whose type is not recognized are returned unchanged.
+    """
+    stripped = message.lstrip()
+    for commit_type, emoji in EMOJI_BY_TYPE.items():
+        if stripped.startswith(commit_type + "(") or stripped.startswith(commit_type + ":"):
+            return f"{emoji} {message}"
+    return message
