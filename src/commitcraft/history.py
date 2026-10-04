@@ -38,13 +38,20 @@ def record_message(message: str, backend: str, model: str) -> None:
 
 
 def recent_messages(limit: int = 5) -> list[dict]:
-    """Return up to ``limit`` history entries, newest first."""
+    """Return up to ``limit`` history entries, newest first.
+
+    Corrupted lines are skipped: a single bad line in the log must not
+    crash the CLI.
+    """
     path = history_path()
     if not path.exists():
         return []
-    entries = [
-        json.loads(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
-        if line.strip()
-    ]
+    entries = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue
     return entries[-limit:][::-1]
