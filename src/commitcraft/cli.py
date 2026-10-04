@@ -12,6 +12,18 @@ from .history import record_message, recent_messages
 from .prompts import SYSTEM_PROMPT, add_emoji, build_retry_user_prompt, build_user_prompt
 
 
+def _non_negative_int(value: str) -> int:
+    """argparse ``type`` that rejects negative ints.
+
+    A negative ``--max-diff-chars`` would slice the diff as ``diff[:-N]``,
+    silently dropping the tail without the "[diff truncated]" marker.
+    """
+    ivalue = int(value)
+    if ivalue < 0:
+        raise argparse.ArgumentTypeError(f"must be >= 0, got {value!r}")
+    return ivalue
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="commitcraft",
@@ -43,7 +55,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--max-diff-chars",
-        type=int,
+        type=_non_negative_int,
         default=12000,
         help="Truncate the staged diff past this many characters",
     )
