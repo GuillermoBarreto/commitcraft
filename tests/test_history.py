@@ -24,3 +24,14 @@ def test_history_is_capped(tmp_path, monkeypatch):
 def test_recent_messages_empty_when_no_file(tmp_path, monkeypatch):
     monkeypatch.setattr(history, "history_path", lambda: tmp_path / "missing.jsonl")
     assert history.recent_messages() == []
+
+
+def test_recent_messages_skips_corrupted_lines(tmp_path, monkeypatch):
+    monkeypatch.setattr(history, "history_path", lambda: tmp_path / "history.jsonl")
+    history.record_message("feat: add thing", "openai", "gpt-4o-mini")
+    path = tmp_path / "history.jsonl"
+    with path.open("a", encoding="utf-8") as fh:
+        fh.write("{not valid json\n")
+    history.record_message("fix: repair bug", "ollama", "llama3.1")
+    recent = history.recent_messages(limit=5)
+    assert [e["message"] for e in recent] == ["fix: repair bug", "feat: add thing"]
