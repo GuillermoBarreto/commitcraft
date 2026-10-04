@@ -29,3 +29,17 @@ def test_emoji_covers_all_prompt_types():
     for commit_type in ("feat", "fix", "docs", "style", "refactor", "perf",
                         "test", "build", "ci", "chore", "revert"):
         assert commit_type in EMOJI_BY_TYPE
+
+
+def test_max_diff_chars_rejects_negative():
+    import argparse
+
+    from commitcraft.cli import build_parser
+
+    parser = build_parser()
+    try:
+        parser.parse_args(["--max-diff-chars", "-5"])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("negative --max-diff-chars should fail parsing")
