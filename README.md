@@ -78,7 +78,6 @@ commitcraft --backend ollama           # or run fully local with Ollama
 
 ## Roadmap
 
-- `--dry-run` showing the request that would be sent
-- Message history / regeneration (`--retry`)
-- Emoji conventional commits (`--emoji`)
+- Message history / regeneration (`--retry`) — done
+- Emoji conventional commits (`--emoji`) — done
 - Commitizen-style interactive type picker fallback when offline
