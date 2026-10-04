@@ -105,12 +105,71 @@ class OllamaBackend:
             raise BackendError("unexpected response shape from Ollama") from exc
 
 
+CONVENTIONAL_TYPES = [
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "build",
+    "ci",
+    "chore",
+    "revert",
+]
+
+
+class LocalBackend:
+    """Offline fallback: compose the message with an interactive type picker.
+
+    No network access and no API key needed. The user picks the
+    conventional-commit type from a numbered list, then enters a scope,
+    subject, and optional body, and the backend assembles a
+    ``type(scope): subject`` message.
+    """
+
+    def _ask(self, prompt: str) -> str:
+        try:
+            return input(prompt)
+        except (EOFError, KeyboardInterrupt) as exc:
+            raise BackendError("offline message entry aborted") from exc
+
+    def _pick_type(self) -> str:
+        for number, commit_type in enumerate(CONVENTIONAL_TYPES, start=1):
+            print(f"  {number}. {commit_type}")
+        while True:
+            answer = self._ask(
+                f"Type [1-{len(CONVENTIONAL_TYPES)}]: "
+            ).strip()
+            if answer.isdigit() and 1 <= int(answer) <= len(CONVENTIONAL_TYPES):
+                return CONVENTIONAL_TYPES[int(answer) - 1]
+            print("commitcraft: enter a number from the list")
+
+    def generate(self, system_prompt: str, user_prompt: str, model: str) -> str:
+        print("commitcraft: offline mode — answer the prompts to compose the message")
+        commit_type = self._pick_type()
+        scope = self._ask("Scope (optional): ").strip()
+        subject = ""
+        while not subject:
+            subject = self._ask("Subject (required): ").strip()
+            if not subject:
+                print("commitcraft: subject cannot be empty")
+        body = self._ask("Body (optional): ").strip()
+        header = (
+            f"{commit_type}({scope}): {subject}" if scope else f"{commit_type}: {subject}"
+        )
+        return f"{header}\n\n{body}" if body else header
+
+
 BACKENDS = {
     "openai": OpenAICompatibleBackend,
     "ollama": OllamaBackend,
+    "local": LocalBackend,
 }
 
 DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "ollama": "llama3.1",
+    "local": "interactive",
 }
