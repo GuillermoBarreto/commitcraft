@@ -11,6 +11,7 @@ from commitcraft.backends import (
     BACKENDS,
     DEFAULT_MODELS,
     BackendError,
+    LocalBackend,
     OllamaBackend,
     OpenAICompatibleBackend,
 )
@@ -41,8 +42,8 @@ def _patch_urlopen(monkeypatch: pytest.MonkeyPatch, payload: dict) -> None:
 
 
 def test_backend_registry() -> None:
-    assert set(BACKENDS) == {"openai", "ollama"}
-    assert set(DEFAULT_MODELS) == {"openai", "ollama"}
+    assert set(BACKENDS) == {"openai", "ollama", "local"}
+    assert set(DEFAULT_MODELS) == {"openai", "ollama", "local"}
 
 
 def test_openai_requires_api_key(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -115,3 +116,41 @@ def test_unreachable_host_becomes_backend_error(
     monkeypatch.setattr(backends.urllib.request, "urlopen", fake_urlopen)
     with pytest.raises(BackendError, match="could not reach backend"):
         OllamaBackend().generate("sys", "user", "llama3.1")
+
+
+def test_local_backend_composes_message(monkeypatch):
+    answers = iter(["2", "parser", "guard against empty input lines", ""])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+    message = LocalBackend().generate("system", "user", "interactive")
+    assert message == "fix(parser): guard against empty input lines"
+
+
+def test_local_backend_without_scope_and_with_body(monkeypatch):
+    answers = iter(["1", "", "add shiny thing", "It sparkles."])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+    message = LocalBackend().generate("system", "user", "interactive")
+    assert message == "feat: add shiny thing\n\nIt sparkles."
+
+
+def test_local_backend_reprompts_on_bad_type(monkeypatch, capsys):
+    answers = iter(["99", "nope", "3"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+    backend = LocalBackend()
+    assert backend._pick_type() == "docs"
+    assert "enter a number from the list" in capsys.readouterr().out
+
+
+def test_local_backend_requires_subject(monkeypatch, capsys):
+    answers = iter(["1", "cli", "", "  ", "real subject", ""])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+    message = LocalBackend().generate("system", "user", "interactive")
+    assert message == "feat(cli): real subject"
+    assert "subject cannot be empty" in capsys.readouterr().out
+
+
+def test_local_backend_abort_on_eof(monkeypatch):
+    def boom(prompt=""):
+        raise EOFError
+    monkeypatch.setattr("builtins.input", boom)
+    with pytest.raises(BackendError, match="aborted"):
+        LocalBackend().generate("system", "user", "interactive")
