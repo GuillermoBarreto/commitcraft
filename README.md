@@ -51,6 +51,7 @@ Choose the backend and model:
 ```bash
 commitcraft --backend ollama --model codellama
 commitcraft --backend openai --model gpt-4o-mini
+commitcraft --backend local            # no network or API key: interactive type picker
 ```
 
 ## Configuration
@@ -80,4 +81,4 @@ commitcraft --backend ollama           # or run fully local with Ollama
 
 - Message history / regeneration (`--retry`) — done
 - Emoji conventional commits (`--emoji`) — done
-- Commitizen-style interactive type picker fallback when offline
+- Commitizen-style interactive type picker fallback when offline — done (`--backend local`)
