@@ -77,7 +77,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--history-limit",
-        type=int,
+        type=_non_negative_int,
         default=5,
         help="How many history entries --history shows (default: 5)",
     )
