@@ -43,3 +43,42 @@ def test_max_diff_chars_rejects_negative():
         assert exc.code == 2
     else:
         raise AssertionError("negative --max-diff-chars should fail parsing")
+
+
+def test_apply_yes_flag_parses():
+    from commitcraft.cli import build_parser
+
+    args = build_parser().parse_args(["--apply", "--yes"])
+    assert args.apply and args.yes
+    args = build_parser().parse_args(["-y"])
+    assert args.yes and not args.apply
+    args = build_parser().parse_args([])
+    assert not args.yes and not args.apply
+
+
+def test_history_limit_rejects_negative():
+    import argparse
+
+    from commitcraft.cli import build_parser
+
+    parser = build_parser()
+    try:
+        parser.parse_args(["--history", "--history-limit", "-3"])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("negative --history-limit should fail parsing")
+
+
+def test_version_flag_prints_and_exits(capsys):
+    from commitcraft.cli import build_parser
+
+    parser = build_parser()
+    try:
+        parser.parse_args(["--version"])
+    except SystemExit as exc:
+        assert exc.code == 0
+    else:
+        raise AssertionError("--version should exit")
+    out = capsys.readouterr().out.strip()
+    assert out, "expected a version string on stdout"
