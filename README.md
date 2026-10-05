@@ -46,6 +46,25 @@ Commit with the suggested message after a confirmation prompt:
 commitcraft --apply
 ```
 
+Skip the confirmation prompt for non-interactive use:
+
+```bash
+commitcraft --apply --yes
+```
+
+Show recently generated messages (newest first):
+
+```bash
+commitcraft --history
+commitcraft --history --history-limit 10
+```
+
+Print the installed version:
+
+```bash
+commitcraft --version
+```
+
 Choose the backend and model:
 
 ```bash
