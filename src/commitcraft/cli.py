@@ -12,6 +12,18 @@ from .history import record_message, recent_messages
 from .prompts import SYSTEM_PROMPT, add_emoji, build_retry_user_prompt, build_user_prompt
 
 
+def _package_version() -> str:
+    """Installed commitcraft version, falling back to the pyproject version."""
+    try:
+        from importlib.metadata import PackageNotFoundError, version
+    except ImportError:
+        return "0.1.0"
+    try:
+        return version("commitcraft")
+    except PackageNotFoundError:
+        return "0.1.0"
+
+
 def _non_negative_int(value: str) -> int:
     """argparse ``type`` that rejects negative ints.
 
@@ -80,6 +92,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=_non_negative_int,
         default=5,
         help="How many history entries --history shows (default: 5)",
+    )
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=_package_version(),
+        help="Print the commitcraft version and exit",
     )
     parser.add_argument(
         "--oneline",
