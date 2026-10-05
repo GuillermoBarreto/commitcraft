@@ -49,6 +49,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Commit the staged changes with the suggested message",
     )
     parser.add_argument(
+        "--yes",
+        "-y",
+        action="store_true",
+        help="With --apply, commit without asking for confirmation",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print the prompt that would be sent, without calling the LLM",
@@ -174,13 +180,14 @@ def main(argv: list[str] | None = None) -> int:
         message = add_emoji(message)
     print(message)
     if args.apply:
-        try:
-            confirm = input("Commit with this message? [y/N] ").strip().lower()
-        except EOFError:
-            confirm = "n"
-        if confirm != "y":
-            print("commitcraft: aborted", file=sys.stderr)
-            return 1
+        if not args.yes:
+            try:
+                confirm = input("Commit with this message? [y/N] ").strip().lower()
+            except EOFError:
+                confirm = "n"
+            if confirm != "y":
+                print("commitcraft: aborted", file=sys.stderr)
+                return 1
         try:
             subprocess.run(["git", "commit", "-m", message], check=True)
         except subprocess.CalledProcessError:
