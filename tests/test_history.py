@@ -35,3 +35,9 @@ def test_recent_messages_skips_corrupted_lines(tmp_path, monkeypatch):
     history.record_message("fix: repair bug", "ollama", "llama3.1")
     recent = history.recent_messages(limit=5)
     assert [e["message"] for e in recent] == ["fix: repair bug", "feat: add thing"]
+
+
+def test_recent_messages_limit_zero_returns_nothing(tmp_path, monkeypatch):
+    monkeypatch.setattr(history, "history_path", lambda: tmp_path / "history.jsonl")
+    history.record_message("feat: add thing", "openai", "gpt-4o-mini")
+    assert history.recent_messages(limit=0) == []

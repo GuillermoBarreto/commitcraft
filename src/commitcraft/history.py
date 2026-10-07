@@ -46,6 +46,8 @@ def recent_messages(limit: int = 5) -> list[dict]:
     path = history_path()
     if not path.exists():
         return []
+    if limit <= 0:
+        return []
     entries = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if not line.strip():
