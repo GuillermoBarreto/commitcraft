@@ -40,8 +40,8 @@ def record_message(message: str, backend: str, model: str) -> None:
 def recent_messages(limit: int = 5) -> list[dict]:
     """Return up to ``limit`` history entries, newest first.
 
-    Corrupted lines are skipped: a single bad line in the log must not
-    crash the CLI.
+    Corrupted lines and valid-JSON-but-not-a-mapping lines (e.g. ``42``)
+    are skipped: a single bad line in the log must not crash the CLI.
     """
     path = history_path()
     if not path.exists():
@@ -53,7 +53,10 @@ def recent_messages(limit: int = 5) -> list[dict]:
         if not line.strip():
             continue
         try:
-            entries.append(json.loads(line))
+            entry = json.loads(line)
         except json.JSONDecodeError:
             continue
+        if not isinstance(entry, dict):
+            continue
+        entries.append(entry)
     return entries[-limit:][::-1]
