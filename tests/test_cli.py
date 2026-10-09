@@ -82,3 +82,22 @@ def test_version_flag_prints_and_exits(capsys):
         raise AssertionError("--version should exit")
     out = capsys.readouterr().out.strip()
     assert out, "expected a version string on stdout"
+
+
+def test_main_records_message_after_transforms(tmp_path, monkeypatch, capsys):
+    from commitcraft import cli as cli_mod
+
+    monkeypatch.setattr(cli_mod, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(
+        cli_mod, "draft_message", lambda *a, **k: "fix: do thing\n\nBody here."
+    )
+    recorded = {}
+    monkeypatch.setattr(
+        cli_mod,
+        "record_message",
+        lambda message, backend, model: recorded.update(message=message),
+    )
+    code = cli_mod.main(["--oneline", "--emoji", "--backend", "openai"])
+    assert code == 0
+    assert recorded["message"] == "\U0001F41B fix: do thing"
+    assert capsys.readouterr().out.strip() == "\U0001F41B fix: do thing"

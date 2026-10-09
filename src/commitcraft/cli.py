@@ -191,11 +191,11 @@ def main(argv: list[str] | None = None) -> int:
         print("commitcraft: error: backend returned an empty message", file=sys.stderr)
         return 1
     model = args.model or DEFAULT_MODELS[args.backend]
-    record_message(message, args.backend, model)
     if args.oneline:
         message = to_subject_only(message)
     if args.emoji:
         message = add_emoji(message)
+    record_message(message, args.backend, model)
     print(message)
     if args.apply:
         if not args.yes:
