@@ -65,6 +65,14 @@ Print the installed version:
 commitcraft --version
 ```
 
+Keep the subject within the conventional 72-character limit. The model is told
+to, but doesn't always listen — commitcraft truncates the subject word-aware
+and warns on stderr (use 0 to disable):
+
+```bash
+commitcraft --max-subject-chars 50
+```
+
 Choose the backend and model:
 
 ```bash
