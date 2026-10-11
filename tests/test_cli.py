@@ -101,3 +101,22 @@ def test_main_records_message_after_transforms(tmp_path, monkeypatch, capsys):
     assert code == 0
     assert recorded["message"] == "\U0001F41B fix: do thing"
     assert capsys.readouterr().out.strip() == "\U0001F41B fix: do thing"
+
+
+def test_enforce_subject_length_truncates_and_warns(capsys):
+    from commitcraft.cli import enforce_subject_length
+    out = enforce_subject_length("fix: " + "x" * 100 + "\n\nBody.", 72)
+    assert len(out.splitlines()[0]) <= 72
+    assert "Body." in out
+    assert "truncated" in capsys.readouterr().err
+
+
+def test_enforce_subject_length_zero_disables():
+    from commitcraft.cli import enforce_subject_length
+    msg = "fix: " + "x" * 100
+    assert enforce_subject_length(msg, 0) == msg
+
+
+def test_max_subject_chars_flag_parses():
+    from commitcraft.cli import build_parser
+    assert build_parser().parse_args(["--max-subject-chars", "50"]).max_subject_chars == 50

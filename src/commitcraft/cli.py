@@ -109,6 +109,12 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Prefix the commit type with its conventional emoji",
     )
+    parser.add_argument(
+        "--max-subject-chars",
+        type=_non_negative_int,
+        default=72,
+        help="Truncate the commit subject past this many characters, warning on stderr (0 disables)",
+    )
     return parser
 
 
@@ -158,6 +164,26 @@ def to_subject_only(message: str) -> str:
     return stripped.splitlines()[0].strip() if stripped else ""
 
 
+def enforce_subject_length(message: str, max_chars: int) -> str:
+    """Truncate the subject line to max_chars, word-aware, warning on stderr.
+
+    A max_chars of 0 disables enforcement. The body is never touched.
+    """
+    if max_chars <= 0:
+        return message
+    lines = message.split("\n", 1)
+    subject = lines[0]
+    if len(subject) <= max_chars:
+        return message
+    cut = subject[:max_chars].rsplit(" ", 1)[0] or subject[:max_chars]
+    print(
+        f"commitcraft: warning: subject truncated to {max_chars} chars "
+        f"(was {len(subject)})",
+        file=sys.stderr,
+    )
+    return cut + ("\n" + lines[1] if len(lines) > 1 else "")
+
+
 def show_history(limit: int = 5) -> int:
     """Print recent generated messages, newest first."""
     entries = recent_messages(limit=limit)
@@ -195,6 +221,7 @@ def main(argv: list[str] | None = None) -> int:
         message = to_subject_only(message)
     if args.emoji:
         message = add_emoji(message)
+    message = enforce_subject_length(message, args.max_subject_chars)
     record_message(message, args.backend, model)
     print(message)
     if args.apply:
